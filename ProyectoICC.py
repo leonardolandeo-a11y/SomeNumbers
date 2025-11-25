@@ -1,4 +1,6 @@
-
+"""
+Objetivo: En este proyecto hemos creado un algoritmo que realiza
+"""
 ################ Importacion ################
 
 from sklearn.datasets import load_digits
@@ -18,21 +20,22 @@ EtiquetasDigits = Digits.target
 ################ Procesamiento de Imagenes ################
 
 def ProcesamientoImagenes(ruta):
-    ImagenReal = Image.open(ruta) # se convierte a matrix (tipo pillow)
-    ImagenGris = ImagenReal.convert("L") # [0-255] 0 es negro y blanco es 255
-    ImagenGrisRedimensionada = ImagenGris.resize((8,8)) # Se redimensiona la matrix a 8x8
+    ImagenReal = Image.open(ruta) 
+    ImagenGris = ImagenReal.convert("L")
+    ImagenGrisRedimensionada = ImagenGris.resize((8,8))
     
     MatrizImagenProcesada = np.array(ImagenGrisRedimensionada).astype(float)
     
-    MatrizImagenProcesada = (-1*MatrizImagenProcesada)+ 255 # ahora 255 es negro y 0 es blanco 
+    MatrizImagenProcesada = (-1*MatrizImagenProcesada)+ 255
     
-    MatrizImagenProcesada = (MatrizImagenProcesada/255) *16  # Escalado entre [0- 16]
-    Vector64 = MatrizImagenProcesada.flatten() # Se aplana la mat
+    MatrizImagenProcesada = (MatrizImagenProcesada/255) *16 
+    Vector64 = MatrizImagenProcesada.flatten() 
     return Vector64
 ################################################
 
 
-################ KNN Manual ################
+####################################### KNN Manual #######################################
+
 
 ################ Distancia Euclidiana ################
 
@@ -59,7 +62,8 @@ def VecinosMasCercanos3(distancia):
     return distancia[:3]
 ################################################
 
-################################################
+
+#########################################################################################
 
 
 ################ Aplicacion de las funciones a cada imagen ################
@@ -96,7 +100,7 @@ DataDiccionarioNumerosClasificados[["Vecino 1", "Vecino 2", "Vecino 3"]] = pd.Da
 DataDiccionarioNumerosClasificados.drop([1],axis = 1, inplace= True)
 
 DataDiccionarioNumerosClasificados = DataDiccionarioNumerosClasificados.rename(columns={0: "NumerosOriginales"})
-DataDiccionarioNumerosClasificados.to_csv("NumerosClasificados.csv")
+DataDiccionarioNumerosClasificados.to_csv("NumerosClasificados/DataFrameNumerosClasificados.csv")
 ################################################
 
 
@@ -125,7 +129,7 @@ for indice, fila in DataDiccionarioNumerosClasificados.iterrows():
 
 SerieListaNumeroDetectado = pd.Series(ListaNumeroDetectado,name="NumeroDetectado",index=DataDiccionarioNumerosClasificados.index)
 DataDiccionarioNumerosClasificados["NumeroDetectado"] = SerieListaNumeroDetectado
-DataDiccionarioNumerosClasificados.to_csv("NumerosClasificados&NumerosDetectados.csv")
+DataDiccionarioNumerosClasificados.to_csv("NumerosClasificados_&_NumerosDetectados/DataFrameNumerosClasificados_&_NumerosDetectados.csv")
 ################################################
 
 
@@ -138,20 +142,19 @@ for indice, fila in DataDiccionarioNumerosClasificados.iterrows():
     MatrizConfusion10[int(NumeroOriginal),int(NumeroDetectado)] += 1
 
 DataFrameMatrizConfusion10 = pd.DataFrame(MatrizConfusion10)
-DataFrameMatrizConfusion10.to_csv("DataFrameMatrizConfusion10.csv",index = False)
+DataFrameMatrizConfusion10.to_csv("MatrizConfusion_10_Clases/DataFrameMatrizConfusion10.csv",index = False)
 
 ################################################
 
 
 ################ Creacion de Matriz de confunsion 2 clases ################
-Matrices2clasesLista = []
+Matrices2clasesdiccionario = {}
 NumerosOriginalesM = DataDiccionarioNumerosClasificados["NumerosOriginales"]
 for numero in NumerosOriginalesM:
     VerdaderoPositivo = 0
     VerdaderoNegativo = 0
     FalsoPositivo = 0
     FalsoNegativo = 0
-    Matrices2clasesdiccionario = {}
     for indice, fila in DataDiccionarioNumerosClasificados.iterrows():
         NumeroReal = fila["NumerosOriginales"]
         NumeroDetectado = fila["NumeroDetectado"]
@@ -170,14 +173,83 @@ for numero in NumerosOriginalesM:
         [FalsoPositivo, VerdaderoNegativo]
     ]
     Matrices2clasesdiccionario[numero] = MatrizClases_2
-    Matrices2clasesLista.append(Matrices2clasesdiccionario)
     
-for dictAux in Matrices2clasesLista:
-    for key,valor in dictAux.items():
-        print("")
-        print(f"Matriz de confusion 2 clase: {key}")
-        DataMatriz2Clases = pd.DataFrame(valor,index=["Si", "No"], columns=["Predijo Si", "Predijo No"])
-        print(DataMatriz2Clases)
-        print("################")
+i = 0
+for key,valor in Matrices2clasesdiccionario.items():
+    print("")
+    print(f"Matriz de confusion 2 clase: {key}")
+    DataMatriz2Clases = pd.DataFrame(valor,index=["Si", "No"], columns=["Predijo Si", "Predijo No"])
+    DataMatriz2Clases.to_csv(f"MatricesConfusion_2/MatrizConfusion{i}.csv")
+    i+=1
+    print(DataMatriz2Clases)
+    print("################")
+
+
+################################################
+
+
+################ Calculo de metricas ################
+ColumnasMetricas = ["Accuracy","PrecisionVerdadero","RecallVerdadero","F1_Score_Verdadero","PrecisionFalso","RecallFalso","F1_Score_Verdadero"]
+MetricasDataFrameFinal = pd.DataFrame(columns=ColumnasMetricas)
+
+
+for i in range(10):
+    Matriz2 = pd.read_csv(f"MatricesConfusion_2/MatrizConfusion{i}.csv")
+    OperacionesLista = []
+    Metricas = []
+    for indice, fila in Matriz2.iterrows():
+        VerdaderoPositivo = fila["Predijo Si"]
+        VerdaderoNegativo = fila["Predijo No"]
+        if indice == "No":
+            FalsoPositivo = fila["Predijo No"]
+            FalsoNegativo = fila["Predijo Si"]
+            OperacionesLista.append(FalsoPositivo)
+            OperacionesLista.append(FalsoNegativo)
+        OperacionesLista.append(VerdaderoPositivo)
+        OperacionesLista.append(VerdaderoNegativo)
+    # Patron de Operaciones lista : [VP , FP, FN,VN]
+    
+    # Patron Metricas Lista: [Accuracy, PrecisionVerdadero, RecallVerdadero, F1_Score_Verdadero, PrecisionFalso, RecallFalso, F1_Score_Verdadero]
+    
+    ###### Accuracy ######
+    Accuracy = (OperacionesLista[0] + OperacionesLista[3])/(sum(OperacionesLista))
+    Metricas.append(Accuracy)
+    ######################
+    
+    ###### Precision Verdadero ######
+    PrecisionVerdadero = (OperacionesLista[0])/max(1,(OperacionesLista[0]+OperacionesLista[1]))
+    Metricas.append(PrecisionVerdadero)
+    ######################
+    
+    ###### Recall Verdadero ######
+    RecallVerdadero = (OperacionesLista[0])/max(1,(OperacionesLista[0]+ OperacionesLista[2]))
+    Metricas.append(RecallVerdadero)
+    ######################
+    
+    ###### F1 Score Verdadero ######
+    F1_Score_Verdadero = 2* ((PrecisionVerdadero*RecallVerdadero)/max(1,(PrecisionVerdadero + RecallVerdadero)))
+    Metricas.append(F1_Score_Verdadero)
+    #####################
+    
+    ###### Precision Falso ######
+    PrecisionFalso = (OperacionesLista[3])/max(1,(OperacionesLista[3] + OperacionesLista[2]))
+    Metricas.append(PrecisionFalso)
+    #####################
+    
+    ###### Recall Falso ######
+    RecallFalso = (OperacionesLista[3])/max(1,(OperacionesLista[3] + OperacionesLista[1]))
+    Metricas.append(RecallFalso)
+    #####################
+    
+    ###### F1 Score Falso ######
+    F1_Score_Falso = 2* ((PrecisionFalso*RecallFalso)/max(1,(PrecisionFalso + RecallFalso)))
+    Metricas.append(F1_Score_Falso)
+    #####################
+    
+    MetricasDataFrameAux = pd.Series(Metricas,index = ["Accuracy","PrecisionVerdadero","RecallVerdadero","F1_Score_Verdadero","PrecisionFalso","RecallFalso","F1_Score_Verdadero"])
+    MetricasDataFrameFinal = pd.concat([MetricasDataFrameFinal,MetricasDataFrameAux.to_frame().T],ignore_index=True)
+    
+    
+MetricasDataFrameFinal.to_csv("Metricas/MetricasDataFrameFinal.csv")
 
 ################################################
