@@ -1,6 +1,4 @@
-"""
-Objetivo: En este proyecto hemos creado un algoritmo que realiza
-"""
+# Treicy
 ################ Importacion ################
 
 from sklearn.datasets import load_digits
@@ -17,7 +15,7 @@ EtiquetasDigits = Digits.target
 ################################################
 
 
-################ Procesamiento de Imagenes ################
+################ Procesamiento de Imagenes  ################
 
 def ProcesamientoImagenes(ruta):
     ImagenReal = Image.open(ruta) 
@@ -34,13 +32,13 @@ def ProcesamientoImagenes(ruta):
 ################################################
 
 
-####################################### KNN Manual #######################################
+####################################### KNN Manual de Brad #######################################
 
 
 ################ Distancia Euclidiana ################
 
-def DistanciaEuclidiana(Imagen1,Imagen2):
-    return np.sqrt(np.sum((Imagen1 -Imagen2)**2))
+def DistanciaEuclidiana(Vector1,Vector2):
+    return np.sqrt(np.sum((Vector1 -Vector2)**2))
 
 ################################################
 
@@ -66,6 +64,7 @@ def VecinosMasCercanos3(distancia):
 #########################################################################################
 
 
+# Leonardo 
 ################ Aplicacion de las funciones a cada imagen ################
 
 DiccionarioNumerosClasificados = {}
@@ -133,10 +132,11 @@ DataDiccionarioNumerosClasificados.to_csv("NumerosClasificados_&_NumerosDetectad
 ################################################
 
 
+# Treicy
 ################ Creacion de Matriz de Confusion 10 clases ################
 
 MatrizConfusion10 = np.zeros((10,10))
-for indice, fila in DataDiccionarioNumerosClasificados.iterrows():
+for indice, fila in DataDiccionarioNumerosClasificados.iterrows():   
     NumeroOriginal = fila["NumerosOriginales"]
     NumeroDetectado = fila["NumeroDetectado"]
     MatrizConfusion10[int(NumeroOriginal),int(NumeroDetectado)] += 1
@@ -146,10 +146,12 @@ DataFrameMatrizConfusion10.to_csv("MatrizConfusion_10_Clases/DataFrameMatrizConf
 
 ################################################
 
-
+# Julian
 ################ Creacion de Matriz de confunsion 2 clases ################
 Matrices2clasesdiccionario = {}
+
 NumerosOriginalesM = DataDiccionarioNumerosClasificados["NumerosOriginales"]
+
 for numero in NumerosOriginalesM:
     VerdaderoPositivo = 0
     VerdaderoNegativo = 0
@@ -159,21 +161,25 @@ for numero in NumerosOriginalesM:
         NumeroReal = fila["NumerosOriginales"]
         NumeroDetectado = fila["NumeroDetectado"]
         
-        if NumeroReal == numero and NumeroDetectado == numero:
+        if NumeroReal == numero and NumeroDetectado == numero:   
             VerdaderoPositivo += 1
-        elif NumeroReal == numero and NumeroDetectado != numero:
-            FalsoNegativo += 1
-        elif NumeroReal != numero and NumeroDetectado != numero:
-            VerdaderoNegativo +=1
+            
         elif NumeroReal != numero and NumeroDetectado == numero:
             FalsoPositivo += 1
-    
+        
+        elif NumeroReal != numero and NumeroDetectado != numero:  
+            VerdaderoNegativo +=1
+            
+        elif NumeroReal == numero and NumeroDetectado != numero:  
+            FalsoNegativo += 1
+            
     MatrizClases_2 = [
-        [VerdaderoPositivo, FalsoNegativo],
-        [FalsoPositivo, VerdaderoNegativo]
+        [VerdaderoPositivo, FalsoPositivo],
+        [FalsoNegativo, VerdaderoNegativo]
     ]
     Matrices2clasesdiccionario[numero] = MatrizClases_2
     
+
 i = 0
 for key,valor in Matrices2clasesdiccionario.items():
     print("")
@@ -188,8 +194,10 @@ for key,valor in Matrices2clasesdiccionario.items():
 ################################################
 
 
+# Jared
 ################ Calculo de metricas ################
-ColumnasMetricas = ["Accuracy","PrecisionVerdadero","RecallVerdadero","F1_Score_Verdadero","PrecisionFalso","RecallFalso","F1_Score_Verdadero"]
+
+ColumnasMetricas = ["Accuracy","PrecisionVerdadero","RecallVerdadero","F1_Score_Verdadero","PrecisionFalso","RecallFalso","F1_Score_Falso"]
 MetricasDataFrameFinal = pd.DataFrame(columns=ColumnasMetricas)
 
 
@@ -198,19 +206,21 @@ for i in range(10):
     OperacionesLista = []
     Metricas = []
     for indice, fila in Matriz2.iterrows():
-        VerdaderoPositivo = fila["Predijo Si"]
-        VerdaderoNegativo = fila["Predijo No"]
-        if indice == "No":
+        if indice == 0:
+            VerdaderoPositivo = fila["Predijo Si"]
             FalsoPositivo = fila["Predijo No"]
-            FalsoNegativo = fila["Predijo Si"]
+            OperacionesLista.append(VerdaderoPositivo)
             OperacionesLista.append(FalsoPositivo)
+        if indice == 1:
+            FalsoNegativo = fila["Predijo Si"]
+            VerdaderoNegativo = fila["Predijo No"]
             OperacionesLista.append(FalsoNegativo)
-        OperacionesLista.append(VerdaderoPositivo)
-        OperacionesLista.append(VerdaderoNegativo)
-    # Patron de Operaciones lista : [VP , FP, FN,VN]
+            OperacionesLista.append(VerdaderoNegativo)
+        
+        
+    # Patron de Operaciones lista : [VP , FP, FN ,VN]
     
     # Patron Metricas Lista: [Accuracy, PrecisionVerdadero, RecallVerdadero, F1_Score_Verdadero, PrecisionFalso, RecallFalso, F1_Score_Verdadero]
-    
     ###### Accuracy ######
     Accuracy = (OperacionesLista[0] + OperacionesLista[3])/(sum(OperacionesLista))
     Metricas.append(Accuracy)
@@ -246,10 +256,10 @@ for i in range(10):
     Metricas.append(F1_Score_Falso)
     #####################
     
-    MetricasDataFrameAux = pd.Series(Metricas,index = ["Accuracy","PrecisionVerdadero","RecallVerdadero","F1_Score_Verdadero","PrecisionFalso","RecallFalso","F1_Score_Verdadero"])
+    MetricasDataFrameAux = pd.Series(Metricas,index = ["Accuracy","PrecisionVerdadero","RecallVerdadero","F1_Score_Verdadero","PrecisionFalso","RecallFalso","F1_Score_Falso"])
     MetricasDataFrameFinal = pd.concat([MetricasDataFrameFinal,MetricasDataFrameAux.to_frame().T],ignore_index=True)
     
     
-MetricasDataFrameFinal.to_csv("Metricas/MetricasDataFrameFinal.csv")
+MetricasDataFrameFinal.to_csv("Metricas/DataFrameMetricasFinal.csv")
 
 ################################################
