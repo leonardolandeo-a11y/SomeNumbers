@@ -19,16 +19,19 @@ EtiquetasDigits = Digits.target
 
 def ProcesamientoImagenes(ruta):
     ImagenReal = Image.open(ruta) 
-    ImagenGris = ImagenReal.convert("L")
+    ImagenGris = ImagenReal.convert("L") # RGB  
     ImagenGrisRedimensionada = ImagenGris.resize((8,8))
     
     MatrizImagenProcesada = np.array(ImagenGrisRedimensionada).astype(float)
-    
+    # 0 -> Negro y 255 -> Blanco
     MatrizImagenProcesada = (-1*MatrizImagenProcesada)+ 255
+    # 255 -> Negro y 0 -> blanco
     
     MatrizImagenProcesada = (MatrizImagenProcesada/255) *16 
+    
     Vector64 = MatrizImagenProcesada.flatten() 
     return Vector64
+
 ################################################
 
 
@@ -120,7 +123,7 @@ for indice, fila in DataDiccionarioNumerosClasificados.iterrows():
         ListaNumeroDetectado.append(NumeroOriginal)
     else:
         print("Pronto...")
-        ListaNumeroDetectado.append(-1)
+        ListaNumeroDetectado.append(Vecinos[0])
 
 ################################################
 
@@ -136,11 +139,11 @@ DataDiccionarioNumerosClasificados.to_csv("NumerosClasificados_&_NumerosDetectad
 ################ Creacion de Matriz de Confusion 10 clases ################
 
 MatrizConfusion10 = np.zeros((10,10))
-for indice, fila in DataDiccionarioNumerosClasificados.iterrows():   
+for indice, fila in DataDiccionarioNumerosClasificados.iterrows():  
     NumeroOriginal = fila["NumerosOriginales"]
     NumeroDetectado = fila["NumeroDetectado"]
     MatrizConfusion10[int(NumeroOriginal),int(NumeroDetectado)] += 1
-
+    
 DataFrameMatrizConfusion10 = pd.DataFrame(MatrizConfusion10)
 DataFrameMatrizConfusion10.to_csv("MatrizConfusion_10_Clases/DataFrameMatrizConfusion10.csv",index = False)
 
@@ -160,19 +163,21 @@ for numero in NumerosOriginalesM:
     for indice, fila in DataDiccionarioNumerosClasificados.iterrows():
         NumeroReal = fila["NumerosOriginales"]
         NumeroDetectado = fila["NumeroDetectado"]
-        
+        # Real: SI  | Predicción: SI
         if NumeroReal == numero and NumeroDetectado == numero:   
             VerdaderoPositivo += 1
             
+        # Real: NO  | Predicción: SI
         elif NumeroReal != numero and NumeroDetectado == numero:
             FalsoPositivo += 1
         
-        elif NumeroReal != numero and NumeroDetectado != numero:  
-            VerdaderoNegativo +=1
-            
+        # Real: SI  | Predicción: NO
         elif NumeroReal == numero and NumeroDetectado != numero:  
             FalsoNegativo += 1
             
+        # Real: NO  | Predicción: NO
+        elif NumeroReal != numero and NumeroDetectado != numero:  
+            VerdaderoNegativo +=1
     MatrizClases_2 = [
         [VerdaderoPositivo, FalsoPositivo],
         [FalsoNegativo, VerdaderoNegativo]
